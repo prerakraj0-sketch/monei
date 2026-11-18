@@ -1,0 +1,378 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user workspace preferences and monthly budget settings",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "preferredCurrency": {
+          "type": "string",
+          "enum": ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY"]
+        },
+        "monthlyBudget": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "preferredCurrency", "monthlyBudget", "createdAt", "updatedAt"]
+    },
+    "StockHolding": {
+      "title": "StockHolding",
+      "description": "User stock position tracked with real-time market valuation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "pattern": "^[A-Z0-9.\\-=]+$"
+        },
+        "companyName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "shares": {
+          "type": "number"
+        },
+        "avgBuyPrice": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 10
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "symbol", "companyName", "shares", "avgBuyPrice", "currency", "notes", "createdAt", "updatedAt"]
+    },
+    "CashAccount": {
+      "title": "CashAccount",
+      "description": "Liquid money balance or cash reserve held by the user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "balance": {
+          "type": "number"
+        },
+        "accountType": {
+          "type": "string",
+          "enum": ["checking", "savings", "brokerage", "cash", "other"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "name", "balance", "accountType", "createdAt", "updatedAt"]
+    },
+    "MonthlyExpense": {
+      "title": "MonthlyExpense",
+      "description": "Monthly spending ledger entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "amount": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["housing", "food", "transport", "utilities", "subscriptions", "shopping", "business", "other"]
+        },
+        "monthKey": {
+          "type": "string",
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "spentDate": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "isRecurring": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "title", "amount", "category", "monthKey", "spentDate", "isRecurring", "createdAt", "updatedAt"]
+    },
+    "ImportantDeal": {
+      "title": "ImportantDeal",
+      "description": "Tracked important financial or business deal",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "counterparty": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "dealValue": {
+          "type": "number"
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["watchlist", "negotiating", "active", "closing", "closed"]
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["high", "normal"]
+        },
+        "targetDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "title", "counterparty", "dealValue", "stage", "priority", "targetDate", "notes", "createdAt", "updatedAt"]
+    },
+    "MoneyAgreement": {
+      "title": "MoneyAgreement",
+      "description": "Formal agreement generated when lending, advancing, or paying money to another party",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "agreementType": {
+          "type": "string",
+          "enum": ["personal_loan", "business_advance", "deal_payment", "security_deposit"]
+        },
+        "lenderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "receiverName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "receiverDetails": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "amount": {
+          "type": "number"
+        },
+        "paymentMode": {
+          "type": "string",
+          "enum": ["upi", "bank_transfer", "cheque", "cash"]
+        },
+        "paymentReference": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "agreementDate": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "dueDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "interestRate": {
+          "type": "number"
+        },
+        "repaymentTerms": {
+          "type": "string",
+          "enum": ["lump_sum", "monthly_installments", "on_demand", "milestone"]
+        },
+        "jurisdiction": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "purposeAndClauses": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "doublePenaltyOnDefault": {
+          "type": "boolean"
+        },
+        "selectedRules": {
+          "type": "array",
+          "description": "Enabled standard legal rule IDs (max 10)"
+        },
+        "lenderSignature": {
+          "type": "string",
+          "maxLength": 45000
+        },
+        "receiverSignature": {
+          "type": "string",
+          "maxLength": 45000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "active", "settled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "agreementType",
+        "lenderName",
+        "receiverName",
+        "receiverDetails",
+        "amount",
+        "paymentMode",
+        "paymentReference",
+        "agreementDate",
+        "dueDate",
+        "interestRate",
+        "repaymentTerms",
+        "jurisdiction",
+        "purposeAndClauses",
+        "doublePenaltyOnDefault",
+        "selectedRules",
+        "lenderSignature",
+        "receiverSignature",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User workspace preferences and monthly budget"
+    },
+    "/users/{userId}/stocks/{stockId}": {
+      "schema": { "$ref": "#/entities/StockHolding" },
+      "description": "Stock holdings owned by the user"
+    },
+    "/users/{userId}/cashAccounts/{accountId}": {
+      "schema": { "$ref": "#/entities/CashAccount" },
+      "description": "Liquid cash reserves owned by the user"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/MonthlyExpense" },
+      "description": "Monthly expense entries logged by the user"
+    },
+    "/users/{userId}/deals/{dealId}": {
+      "schema": { "$ref": "#/entities/ImportantDeal" },
+      "description": "Important deals tracked by the user"
+    },
+    "/users/{userId}/agreements/{agreementId}": {
+      "schema": { "$ref": "#/entities/MoneyAgreement" },
+      "description": "Money agreements generated by the user"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Meridian Ledger",
+  "description": "Real-time stock portfolio tracker, cash and monthly spending ledger, and important deals vault.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

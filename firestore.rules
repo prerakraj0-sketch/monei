@@ -1,0 +1,295 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && isValidId(userId)
+        && request.auth.uid == userId;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'preferredCurrency', 'monthlyBudget', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'preferredCurrency', 'monthlyBudget', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
+        && data.preferredCurrency is string && data.preferredCurrency in ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'JPY']
+        && data.monthlyBudget is number && data.monthlyBudget >= 0 && data.monthlyBudget <= 1000000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStockHolding(data, stockId) {
+      return data.keys().hasAll(['id', 'ownerId', 'symbol', 'companyName', 'shares', 'avgBuyPrice', 'currency', 'notes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'symbol', 'companyName', 'shares', 'avgBuyPrice', 'currency', 'notes', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && data.id == stockId
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.symbol is string && data.symbol.size() >= 1 && data.symbol.size() <= 20 && data.symbol.matches('^[A-Z0-9.\\-=]+$')
+        && data.companyName is string && data.companyName.size() >= 1 && data.companyName.size() <= 120
+        && data.shares is number && data.shares > 0 && data.shares <= 1000000000
+        && data.avgBuyPrice is number && data.avgBuyPrice >= 0 && data.avgBuyPrice <= 1000000000
+        && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
+        && data.notes is string && data.notes.size() <= 300
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCashAccount(data, accountId) {
+      return data.keys().hasAll(['id', 'ownerId', 'name', 'balance', 'accountType', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'name', 'balance', 'accountType', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && data.id == accountId
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && data.balance is number && data.balance >= 0 && data.balance <= 100000000000
+        && data.accountType is string && data.accountType in ['checking', 'savings', 'brokerage', 'cash', 'other']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMonthlyExpense(data, expenseId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'amount', 'category', 'monthKey', 'spentDate', 'isRecurring', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'amount', 'category', 'monthKey', 'spentDate', 'isRecurring', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && data.id == expenseId
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 100
+        && data.amount is number && data.amount > 0 && data.amount <= 1000000000
+        && data.category is string && data.category in ['housing', 'food', 'transport', 'utilities', 'subscriptions', 'shopping', 'business', 'other']
+        && data.monthKey is string && data.monthKey.size() == 7 && data.monthKey.matches('^\\d{4}-\\d{2}$')
+        && data.spentDate is string && data.spentDate.size() == 10 && data.spentDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.isRecurring is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidImportantDeal(data, dealId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'counterparty', 'dealValue', 'stage', 'priority', 'targetDate', 'notes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'counterparty', 'dealValue', 'stage', 'priority', 'targetDate', 'notes', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && data.id == dealId
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 120
+        && data.counterparty is string && data.counterparty.size() <= 100
+        && data.dealValue is number && data.dealValue >= 0 && data.dealValue <= 100000000000
+        && data.stage is string && data.stage in ['watchlist', 'negotiating', 'active', 'closing', 'closed']
+        && data.priority is string && data.priority in ['high', 'normal']
+        && data.targetDate is string && data.targetDate.size() <= 20
+        && data.notes is string && data.notes.size() <= 500
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMoneyAgreement(data, agreementId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'agreementType', 'lenderName', 'receiverName', 'receiverDetails',
+          'amount', 'paymentMode', 'paymentReference', 'agreementDate', 'dueDate',
+          'interestRate', 'repaymentTerms', 'jurisdiction', 'purposeAndClauses',
+          'doublePenaltyOnDefault', 'selectedRules', 'lenderSignature', 'receiverSignature',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'agreementType', 'lenderName', 'receiverName', 'receiverDetails',
+          'amount', 'paymentMode', 'paymentReference', 'agreementDate', 'dueDate',
+          'interestRate', 'repaymentTerms', 'jurisdiction', 'purposeAndClauses',
+          'doublePenaltyOnDefault', 'selectedRules', 'lenderSignature', 'receiverSignature',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.id == agreementId
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.agreementType is string && data.agreementType in ['personal_loan', 'business_advance', 'deal_payment', 'security_deposit']
+        && data.lenderName is string && data.lenderName.size() >= 1 && data.lenderName.size() <= 100
+        && data.receiverName is string && data.receiverName.size() >= 1 && data.receiverName.size() <= 100
+        && data.receiverDetails is string && data.receiverDetails.size() <= 200
+        && data.amount is number && data.amount > 0 && data.amount <= 100000000000
+        && data.paymentMode is string && data.paymentMode in ['upi', 'bank_transfer', 'cheque', 'cash']
+        && data.paymentReference is string && data.paymentReference.size() <= 80
+        && data.agreementDate is string && data.agreementDate.size() == 10 && data.agreementDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.dueDate is string && data.dueDate.size() <= 20
+        && data.interestRate is number && data.interestRate >= 0 && data.interestRate <= 100
+        && data.repaymentTerms is string && data.repaymentTerms in ['lump_sum', 'monthly_installments', 'on_demand', 'milestone']
+        && data.jurisdiction is string && data.jurisdiction.size() <= 80
+        && data.purposeAndClauses is string && data.purposeAndClauses.size() <= 1500
+        && data.doublePenaltyOnDefault is bool
+        && data.selectedRules is list && data.selectedRules.size() <= 10 && (data.selectedRules.size() == 0 || data.selectedRules[0] is string)
+        && data.lenderSignature is string && data.lenderSignature.size() <= 45000
+        && data.receiverSignature is string && data.receiverSignature.size() <= 45000
+        && data.status is string && data.status in ['draft', 'active', 'settled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /users/{userId} {
+      allow get: if isVerifiedOwner(userId);
+      allow list: if false;
+      allow create: if isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['preferredCurrency', 'monthlyBudget', 'displayName', 'updatedAt'])
+        );
+      allow delete: if false;
+
+      match /stocks/{stockId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(stockId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(stockId)
+          && isValidStockHolding(incoming(), stockId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(stockId)
+          && isValidStockHolding(incoming(), stockId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['shares', 'avgBuyPrice', 'notes', 'companyName', 'currency', 'updatedAt'])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(stockId);
+      }
+
+      match /cashAccounts/{accountId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(accountId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(accountId)
+          && isValidCashAccount(incoming(), accountId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(accountId)
+          && isValidCashAccount(incoming(), accountId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'balance', 'accountType', 'updatedAt'])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(accountId);
+      }
+
+      match /expenses/{expenseId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(expenseId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(expenseId)
+          && isValidMonthlyExpense(incoming(), expenseId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(expenseId)
+          && isValidMonthlyExpense(incoming(), expenseId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'amount', 'category', 'monthKey', 'spentDate', 'isRecurring', 'updatedAt'])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(expenseId);
+      }
+
+      match /deals/{dealId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(dealId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(dealId)
+          && isValidImportantDeal(incoming(), dealId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(dealId)
+          && isValidImportantDeal(incoming(), dealId)
+          && existing().stage != 'closed'
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (incoming().diff(existing()).affectedKeys().hasOnly(['stage', 'updatedAt'])) ||
+            (incoming().diff(existing()).affectedKeys().hasOnly(['title', 'counterparty', 'dealValue', 'stage', 'priority', 'targetDate', 'notes', 'updatedAt']))
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(dealId);
+      }
+
+      match /agreements/{agreementId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(agreementId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(agreementId)
+          && isValidMoneyAgreement(incoming(), agreementId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(agreementId)
+          && isValidMoneyAgreement(incoming(), agreementId)
+          && existing().status != 'settled'
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+            (incoming().diff(existing()).affectedKeys().hasOnly([
+              'agreementType', 'lenderName', 'receiverName', 'receiverDetails',
+              'amount', 'paymentMode', 'paymentReference', 'agreementDate', 'dueDate',
+              'interestRate', 'repaymentTerms', 'jurisdiction', 'purposeAndClauses',
+              'doublePenaltyOnDefault', 'selectedRules', 'lenderSignature', 'receiverSignature',
+              'status', 'updatedAt'
+            ]))
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(agreementId);
+      }
+    }
+  }
+}
